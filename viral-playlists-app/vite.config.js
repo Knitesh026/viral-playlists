@@ -14,19 +14,4 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
-  build: {
-    target: 'esnext',
-    minify: 'esbuild',
-    cssCodeSplit: true,
-    chunkSizeWarningLimit: 1000,
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          'react-vendor': ['react', 'react-dom'],
-          'motion-vendor': ['framer-motion', 'motion'],
-          'icons-vendor': ['lucide-react'],
-        },
-      },
-    },
-  },
 })
