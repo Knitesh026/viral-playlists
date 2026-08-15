@@ -1,0 +1,181 @@
+@import "tailwindcss";
+
+:root {
+  --night: #f0eee6;
+  --night-2: #faf8f5;
+  --night-3: #dcd8cc;
+  --moon: #17212b;
+  --moon-dim: #546575;
+  --lamp: #2489d3;
+  --lamp-soft: rgba(36, 137, 211, 0.18);
+  --radio-body: #17191d;
+  --radio-body-2: #0d0f12;
+}
+
+html, body {
+  background: var(--night);
+  color: var(--moon);
+  -webkit-font-smoothing: antialiased;
+  font-family: Mukta, sans-serif;
+}
+
+.font-display {
+  font-family: 'Yatra One', system-ui, sans-serif;
+}
+
+.font-mono2 {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Retro TV Frame Components */
+.tv {
+  background: linear-gradient(180deg, #1e2126, var(--radio-body) 45%, var(--radio-body-2));
+  border-radius: 16px;
+  padding: 14px 14px 12px;
+  position: relative;
+  box-shadow: inset 0 1px #ffffff1a, inset 0 -2px 5px #0000008c, 0 14px 28px #12212e38, 0 3px 8px #12212e24;
+}
+
+.tv-screen {
+  background: #05070f;
+  border-radius: 10px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: inset 0 0 0 2px #000000d9, inset 0 0 22px #000c;
+}
+
+.tv-screen img {
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  filter: saturate(.92) contrast(1.02);
+  width: 100%;
+  transition: filter .35s, transform .5s;
+  display: block;
+}
+
+.tv-screen:after {
+  content: "";
+  pointer-events: none;
+  background: repeating-linear-gradient(0deg, #00000024 0 1px, #0000 1px 3px),
+              radial-gradient(120% 90% at 50% 45%, #0000 55%, #0000006b),
+              linear-gradient(115deg, #f5e9c917, #0000 28%);
+  border-radius: 10px;
+  position: absolute;
+  inset: 0;
+}
+
+.tv-plate {
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  padding: 2px 2px 0;
+  display: flex;
+  position: relative;
+}
+
+.tv-plate:before {
+  content: "";
+  opacity: .55;
+  pointer-events: none;
+  background-image: radial-gradient(circle, #ffffff29 1px, #0000 1.4px);
+  background-size: 6px 6px;
+  height: 8px;
+  position: absolute;
+  top: 50%;
+  left: 2px;
+  right: 60px;
+  transform: translateY(-50%);
+}
+
+.tv-knob {
+  background: radial-gradient(circle at 35% 30%, #b7c4cf, #4a545d 60%, #23282d);
+  border-radius: 9999px;
+  width: 10px;
+  height: 10px;
+  box-shadow: inset 0 -1px 2px #000000b3, 0 1px #ffffff24;
+}
+
+.tv-brand {
+  z-index: 1;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: #e8eef3;
+  background: var(--radio-body-2);
+  opacity: .85;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  max-width: 70%;
+  padding-right: 8px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  position: relative;
+  overflow: hidden;
+}
+
+.tv-card {
+  transition: transform .35s cubic-bezier(.22, 1, .36, 1);
+}
+
+.tv-card:hover {
+  transform: translateY(-6px);
+}
+
+.tv-card:hover .tv-screen img {
+  filter: saturate(1.05) contrast(1.05) brightness(1.06);
+  transform: scale(1.03);
+}
+
+.tv-card .tv-glow {
+  background: radial-gradient(60% 60% at 50% 40%, var(--lamp-soft), transparent 70%);
+  opacity: 0;
+  pointer-events: none;
+  border-radius: 24px;
+  transition: opacity .4s;
+  position: absolute;
+  inset: -18px;
+}
+
+.tv-card:hover .tv-glow {
+  opacity: 1;
+}
+
+/* Category Filter Chips */
+.chip {
+  border: 1px solid var(--night-3);
+  color: var(--moon-dim);
+  backdrop-filter: blur(6px);
+  white-space: nowrap;
+  background: #ffffffd9;
+  font-family: Mukta, sans-serif;
+  transition: all .25s;
+}
+
+.chip:hover {
+  color: var(--moon);
+  border-color: #2489d380;
+}
+
+.chip.active {
+  color: #fff;
+  background: linear-gradient(#3ea2e8, #1f7fc7);
+  border-color: transparent;
+  font-weight: 600;
+  box-shadow: 0 4px 18px #2489d359;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--night);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--night-3);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--lamp);
+}
