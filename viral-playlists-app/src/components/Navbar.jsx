@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, Disc, Sparkles, X } from 'lucide-react';
+import { Search, Plus, Sparkles, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function Navbar({ searchQuery, setSearchQuery, onOpenSubmitModal, totalCount }) {
@@ -27,14 +27,16 @@ export default function Navbar({ searchQuery, setSearchQuery, onOpenSubmitModal,
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-14 sm:h-16">
           
-          {/* Brand Logo: Viral Playlist — Nostalgic */}
+          {/* Brand Logo Image: /logo.png */}
           <div 
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
             className="cursor-pointer flex items-center gap-2 sm:gap-2.5 group shrink-0"
           >
-            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-[#17212b] text-white flex items-center justify-center shadow-md group-hover:bg-[#2489d3] transition-colors">
-              <Disc className="w-4 h-4 sm:w-5.5 sm:h-5.5 animate-spin-slow" />
-            </div>
+            <img 
+              src="/logo.png" 
+              alt="Viral Playlist — Nostalgic Logo" 
+              className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl object-cover shadow-md group-hover:scale-105 transition-transform"
+            />
             <div className="flex items-center gap-2">
               <span className="font-display text-xl sm:text-2xl md:text-3xl text-[#17212b] tracking-tight group-hover:text-[#2489d3] transition-colors block leading-none">
                 Viral Playlist <span className="text-[#2489d3] text-base sm:text-xl font-sans font-medium">— Nostalgic</span>
