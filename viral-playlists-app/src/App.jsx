@@ -43,8 +43,9 @@ export default function App() {
   );
   const [activeCategory, setActiveCategory] = useState('all');
 
-  // Only the id is stored; the playlist itself is derived so vote counts never go stale
-  const [heroId, setHeroId] = useState(() => (playlists.find(p => p.featured) || playlists[0])?.id);
+  const [sort, setSort] = useState('curated');
+  // Card briefly highlighted after a marquee click or a new submission
+  const [focusId, setFocusId] = useState(null);
 
   usePopunder();
 
@@ -81,7 +82,7 @@ export default function App() {
 
   // Filtered playlists
   const filteredPlaylists = useMemo(() => {
-    return votedPlaylists.filter(p => {
+    const list = votedPlaylists.filter(p => {
       const matchesCat = activeCategory === 'all' || p.category === activeCategory;
       const q = searchQuery.toLowerCase().trim();
       if (!q) return matchesCat;
@@ -95,7 +96,16 @@ export default function App() {
 
       return matchesCat && matchesSearch;
     });
-  }, [votedPlaylists, activeCategory, searchQuery]);
+
+    if (sort === 'upvotes') return [...list].sort((a, b) => (b.upvotes || 0) - (a.upvotes || 0));
+    if (sort === 'views') return [...list].sort((a, b) => (b.views || 0) - (a.views || 0));
+    if (sort === 'newest') {
+      // User submissions carry a timestamp in their id; the curated list keeps its order after them
+      const ts = (p) => (p.id.startsWith('custom-') ? Number(p.id.slice(7)) : 0);
+      return [...list].sort((a, b) => ts(b) - ts(a));
+    }
+    return list;
+  }, [votedPlaylists, activeCategory, searchQuery, sort]);
 
   const showToast = useCallback((msg) => {
     setToastMessage(msg);
@@ -103,10 +113,30 @@ export default function App() {
     toastTimer.current = setTimeout(() => setToastMessage(''), 3500);
   }, []);
 
-  const handleSelectHero = (playlist) => {
-    setHeroId(playlist.id);
-    showToast(`Featured "${playlist.title}" in Hero Carousel!`);
+  // Reveal a card: clear filters that would hide it, then scroll to it and flash it
+  const handleFocusCard = (playlist) => {
+    setSearchQuery('');
+    setActiveCategory('all');
+    setSort('curated');
+    setFocusId(playlist.id);
   };
+
+  const resetFilters = () => {
+    setSearchQuery('');
+    setActiveCategory('all');
+  };
+
+  useEffect(() => {
+    if (!focusId) return;
+    const frame = requestAnimationFrame(() =>
+      document.getElementById(`card-${focusId}`)?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+    );
+    const timer = setTimeout(() => setFocusId(null), 2600);
+    return () => {
+      cancelAnimationFrame(frame);
+      clearTimeout(timer);
+    };
+  }, [focusId]);
 
   const handleUpvote = (id) => {
     if (upvotedIds.has(id)) return;
@@ -126,9 +156,8 @@ export default function App() {
       console.error('LocalStorage write error:', err);
     }
 
-    // Set new playlist as Active in Hero Carousel automatically
-    setHeroId(newPlaylist.id);
-    showToast(`🎉 "${newPlaylist.title}" submitted & featured in Hero Carousel!`);
+    handleFocusCard(newPlaylist);
+    showToast(`🎉 "${newPlaylist.title}" added! It's saved in this browser only for now.`);
   };
 
 
@@ -156,9 +185,7 @@ export default function App() {
         {/* Main Hero Thumbnail Carousel */}
         <HeroSection
           playlists={votedPlaylists}
-          activeHeroId={heroId}
-          onSelectHero={handleSelectHero}
-          onUpvote={handleUpvote}
+          onSelectHero={handleFocusCard}
           onOpenSubmitModal={() => setIsSubmitModalOpen(true)}
         />
 
@@ -171,15 +198,18 @@ export default function App() {
           setActiveCategory={setActiveCategory}
           filteredCount={filteredPlaylists.length}
           totalCount={votedPlaylists.length}
+          sort={sort}
+          setSort={setSort}
         />
 
         {/* Playlist Card Grid */}
         <PlaylistGrid
           playlists={filteredPlaylists}
-          onSelectHero={handleSelectHero}
-          activeHeroId={heroId}
+          focusId={focusId}
           onUpvote={handleUpvote}
           upvotedIds={upvotedIds}
+          onReset={resetFilters}
+          onOpenSubmitModal={() => setIsSubmitModalOpen(true)}
         />
 
         {/* Ad: native banner (one per page) */}

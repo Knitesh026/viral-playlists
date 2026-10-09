@@ -140,6 +140,26 @@ html, body {
   opacity: 1;
 }
 
+/* Loading skeleton for screenshots */
+.shimmer {
+  background: linear-gradient(100deg, #10161d 30%, #1d2833 50%, #10161d 70%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s linear infinite;
+}
+
+@keyframes shimmer {
+  to { background-position: -200% 0; }
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .shimmer { animation: none; }
+}
+
 /* Category Filter Chips */
 .chip {
   border: 1px solid var(--night-3);

@@ -3,10 +3,11 @@ import { AnimatedMarqueeHero } from '@/components/ui/hero-3';
 
 export default function HeroSection({ playlists, onSelectHero, onOpenSubmitModal }) {
   // Extract thumbnail URLs for the animated marquee
-  const marqueeImages = playlists.map(p => p.thumbnailUrl).filter(Boolean);
+  const withThumbs = playlists.filter(p => p.thumbnailUrl);
+  const marqueeImages = withThumbs.map(p => p.thumbnailUrl);
 
   const heroValues = {
-    tagline: `🔥 Discover ${playlists.length}+ Viral Playlist Sites`,
+    tagline: `🔥 ${playlists.length} viral playlist sites and counting`,
     title: (
       <>
         Uncover The Internet's Most{' '}
@@ -19,12 +20,11 @@ export default function HeroSection({ playlists, onSelectHero, onOpenSubmitModal
       'Every viral nostalgic music website, barber shop bangers, roadways bus hits, and local beat hubs—all in one place.',
     ctaText: '+ Submit Viral Playlist Site 🚀',
     images: marqueeImages,
+    names: withThumbs.map(p => p.title),
   };
 
   const handleImageClick = (index) => {
-    if (playlists[index]) {
-      onSelectHero(playlists[index]);
-    }
+    if (withThumbs[index]) onSelectHero(withThumbs[index]);
   };
 
   return (

@@ -30,7 +30,7 @@ export default function Navbar({ searchQuery, setSearchQuery, onOpenSubmitModal,
           {/* Brand Logo Image: /logo.png */}
           <div 
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-            className="cursor-pointer flex items-center gap-2 sm:gap-2.5 group shrink-0"
+            className="cursor-pointer flex items-center gap-2 sm:gap-2.5 group min-w-0"
           >
             <img 
               src="/logo.png" 
@@ -38,10 +38,10 @@ export default function Navbar({ searchQuery, setSearchQuery, onOpenSubmitModal,
               className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl object-cover shadow-md group-hover:scale-105 transition-transform"
             />
             <div className="flex items-center gap-2">
-              <span className="font-display text-xl sm:text-2xl md:text-3xl text-[#17212b] tracking-tight group-hover:text-[#2489d3] transition-colors block leading-none">
-                Viral Playlist <span className="text-[#2489d3] text-base sm:text-xl font-sans font-medium">— Nostalgic</span>
+              <span className="font-display text-lg sm:text-2xl md:text-3xl text-[#17212b] tracking-tight group-hover:text-[#2489d3] transition-colors block leading-none whitespace-nowrap">
+                Viral Playlist <span className="hidden md:inline text-[#2489d3] text-base sm:text-xl font-sans font-medium">— Nostalgic</span>
               </span>
-              <span className="hidden sm:inline-block font-mono2 text-[10px] sm:text-xs text-[#546575] bg-white/90 px-2 py-0.5 rounded-full border border-[#dcd8cc] font-semibold">
+              <span className="hidden lg:inline-block font-mono2 text-[10px] sm:text-xs text-[#546575] bg-white/90 px-2 py-0.5 rounded-full border border-[#dcd8cc] font-semibold">
                 {totalCount} Sites
               </span>
             </div>
