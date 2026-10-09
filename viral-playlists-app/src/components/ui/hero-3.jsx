@@ -17,6 +17,46 @@ const ActionButton = ({ children, onClick }) => (
   </motion.button>
 );
 
+// One marquee slide. The second half of the track is a visual clone, so it is hidden from
+// assistive tech and the tab order; a failed screenshot falls back to a visible site name.
+const Slide = ({ src, name, tilt, isClone, onClick, eager }) => {
+  const [failed, setFailed] = React.useState(false);
+  return (
+    <motion.button
+      type="button"
+      aria-label={`Show ${name || "site"} in the directory`}
+      aria-hidden={isClone || undefined}
+      tabIndex={isClone ? -1 : undefined}
+      whileHover={{ scale: 1.05, rotate: 0 }}
+      onClick={onClick}
+      className="relative aspect-[16/10] h-36 sm:h-48 md:h-56 w-56 sm:w-[300px] md:w-[360px] mr-6 sm:mr-8 flex-shrink-0 cursor-pointer rounded-3xl overflow-hidden shadow-2xl border-4 border-white bg-slate-900 transition-all duration-300"
+      style={{ rotate: `${tilt}deg` }}
+    >
+      {failed ? (
+        <span className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-[#1b2733] to-[#0b1118] px-4 font-display text-2xl text-white/90">
+          {name}
+        </span>
+      ) : (
+        <img
+          src={src}
+          alt=""
+          loading={eager ? "eager" : "lazy"}
+          decoding="async"
+          width="450"
+          height="280"
+          className="w-full h-full object-cover object-top"
+          onError={() => setFailed(true)}
+        />
+      )}
+      <span className="absolute inset-0 flex items-end bg-gradient-to-t from-black/50 via-transparent to-transparent p-4 opacity-0 transition-opacity hover:opacity-100">
+        <span className="font-mono2 text-xs text-white/90 bg-black/60 px-3 py-1 rounded-full border border-white/20">
+          ♫ {name || "Preview"}
+        </span>
+      </span>
+    </motion.button>
+  );
+};
+
 // The main hero component
 export const AnimatedMarqueeHero = ({
   tagline,
@@ -127,34 +167,15 @@ export const AnimatedMarqueeHero = ({
           transition={{ ease: "linear", duration: Math.max(20, images.length * 4), repeat: Infinity }}
         >
           {duplicatedImages.map((src, index) => (
-            <motion.button
-              type="button"
+            <Slide
               key={index}
-              aria-label={`Show ${names?.[index % images.length] || "site"} in the directory`}
-              whileHover={{ scale: 1.05, rotate: 0 }}
+              src={src}
+              name={names?.[index % images.length]}
+              tilt={(index % images.length) % 2 === 0 ? -3 : 4}
+              isClone={index >= images.length}
               onClick={() => onImageClick && onImageClick(index % images.length)}
-              className="relative aspect-[16/10] h-36 sm:h-48 md:h-56 w-56 sm:w-[300px] md:w-[360px] mr-6 sm:mr-8 flex-shrink-0 cursor-pointer rounded-3xl overflow-hidden shadow-2xl border-4 border-white bg-slate-900 transition-all duration-300"
-              style={{
-                rotate: `${(index % images.length) % 2 === 0 ? -3 : 4}deg`,
-              }}
-            >
-              <img
-                src={src}
-                alt=""
-                loading={index < 3 ? "eager" : "lazy"}
-                fetchpriority={index === 0 ? "high" : "auto"}
-                decoding="async"
-                width="450"
-                height="280"
-                className="w-full h-full object-cover object-top"
-                onError={(e) => { e.target.style.visibility = 'hidden'; }}
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 hover:opacity-100 transition-opacity flex items-end p-4">
-                <span className="font-mono2 text-xs text-white/90 bg-black/60 px-3 py-1 rounded-full border border-white/20">
-                  ♫ {names?.[index % images.length] || 'Preview'}
-                </span>
-              </div>
-            </motion.button>
+              eager={index < 3}
+            />
           ))}
         </motion.div>
       </div>

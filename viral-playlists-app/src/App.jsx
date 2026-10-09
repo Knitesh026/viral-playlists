@@ -10,6 +10,7 @@ import Footer from './components/Footer';
 import ResponsiveLeaderboard from './components/ads/ResponsiveLeaderboard';
 import NativeBanner from './components/ads/NativeBanner';
 import usePopunder from './components/ads/usePopunder';
+import { scrollToElement } from './lib/scroll';
 
 // Filler words ignored when a search phrase is split into terms
 const STOP_WORDS = new Set(['का', 'के', 'की', 'से', 'में', 'और', 'the', 'of', 'and', 'for', 'in']);
@@ -50,7 +51,8 @@ export default function App() {
 
   const [sort, setSort] = useState('curated');
   // Card briefly highlighted after a marquee click or a new submission
-  const [focusId, setFocusId] = useState(null);
+  // {id, n}: n changes on every request so clicking the same slide twice re-scrolls and re-flashes
+  const [focus, setFocus] = useState(null);
 
   usePopunder();
 
@@ -126,7 +128,7 @@ export default function App() {
     setSearchQuery('');
     setActiveCategory('all');
     setSort('curated');
-    setFocusId(playlist.id);
+    setFocus({ id: playlist.id, n: Date.now() });
   };
 
   const resetFilters = () => {
@@ -135,16 +137,11 @@ export default function App() {
   };
 
   useEffect(() => {
-    if (!focusId) return;
-    const frame = requestAnimationFrame(() =>
-      document.getElementById(`card-${focusId}`)?.scrollIntoView({ block: 'center', behavior: 'smooth' })
-    );
-    const timer = setTimeout(() => setFocusId(null), 2600);
-    return () => {
-      cancelAnimationFrame(frame);
-      clearTimeout(timer);
-    };
-  }, [focusId]);
+    if (!focus) return;
+    scrollToElement(`card-${focus.id}`, 'center');
+    const timer = setTimeout(() => setFocus(null), 2600);
+    return () => clearTimeout(timer);
+  }, [focus]);
 
   const handleUpvote = (id) => {
     if (upvotedIds.has(id)) return;
@@ -213,7 +210,7 @@ export default function App() {
         {/* Playlist Card Grid */}
         <PlaylistGrid
           playlists={filteredPlaylists}
-          focusId={focusId}
+          focusId={focus?.id}
           onUpvote={handleUpvote}
           upvotedIds={upvotedIds}
           onReset={resetFilters}
@@ -241,6 +238,7 @@ export default function App() {
       {/* Footer */}
       <Footer
         setActiveCategory={setActiveCategory}
+        setSearchQuery={setSearchQuery}
         onOpenSubmitModal={() => setIsSubmitModalOpen(true)}
       />
 

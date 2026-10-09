@@ -37,8 +37,8 @@ export default function Navbar({ searchQuery, setSearchQuery, onOpenSubmitModal,
               alt="Viral Playlist — Nostalgic Logo" 
               className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl object-cover shadow-md group-hover:scale-105 transition-transform"
             />
-            <div className="flex items-center gap-2">
-              <span className="font-display text-lg sm:text-2xl md:text-3xl text-[#17212b] tracking-tight group-hover:text-[#2489d3] transition-colors block leading-none whitespace-nowrap">
+            <div className="flex min-w-0 items-center gap-2">
+              <span className="font-display text-lg sm:text-2xl md:text-3xl text-[#17212b] tracking-tight group-hover:text-[#2489d3] transition-colors block leading-none min-w-0 truncate">
                 Viral Playlist <span className="hidden md:inline text-[#2489d3] text-base sm:text-xl font-sans font-medium">— Nostalgic</span>
               </span>
               <span className="hidden lg:inline-block font-mono2 text-[10px] sm:text-xs text-[#546575] bg-white/90 px-2 py-0.5 rounded-full border border-[#dcd8cc] font-semibold">

@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { ChevronDown, Plus } from 'lucide-react';
+import { scrollToElement } from '../lib/scroll';
 
 const SEO_KEYWORD_CLUSTERS = [
   {
@@ -94,8 +95,7 @@ const FAQS = [
 ];
 
 export default function SeoKeywordsSection({ setSearchQuery, setActiveCategory, onOpenSubmitModal }) {
-  const showDirectory = () =>
-    document.getElementById('directory')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const showDirectory = () => scrollToElement('directory');
 
   // FAQPage structured data. The same questions are rendered visibly below, as Google requires.
   useEffect(() => {

@@ -22,7 +22,7 @@ export default function CategoryFilter({ activeCategory, setActiveCategory, filt
           <select
             value={sort}
             onChange={(e) => setSort(e.target.value)}
-            className="cursor-pointer rounded-full border border-[#dcd8cc] bg-white px-3 py-1.5 text-xs font-semibold text-[#17212b] outline-none focus:border-[#2489d3]"
+            className="cursor-pointer rounded-full border border-[#dcd8cc] bg-white px-3 py-1.5 text-xs font-semibold text-[#17212b] outline-none focus:border-[#2489d3] focus-visible:ring-2 focus-visible:ring-[#2489d3] focus-visible:ring-offset-1"
           >
             <option value="curated">Curated</option>
             <option value="upvotes">Most loved</option>

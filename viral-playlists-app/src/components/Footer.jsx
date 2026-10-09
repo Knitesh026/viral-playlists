@@ -1,10 +1,12 @@
 import React from 'react';
 import { INITIAL_CATEGORIES } from '../data/initialPlaylists';
+import { scrollToElement } from '../lib/scroll';
 
-export default function Footer({ onOpenSubmitModal, setActiveCategory }) {
+export default function Footer({ onOpenSubmitModal, setActiveCategory, setSearchQuery }) {
   const goTo = (id) => {
+    setSearchQuery('');
     setActiveCategory(id);
-    document.getElementById('directory')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    scrollToElement('directory');
   };
 
   return (
