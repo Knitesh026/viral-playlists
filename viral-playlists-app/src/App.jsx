@@ -232,6 +232,7 @@ export default function App() {
 
       {/* Footer */}
       <Footer
+        setActiveCategory={setActiveCategory}
         onOpenSubmitModal={() => setIsSubmitModalOpen(true)}
       />
 
