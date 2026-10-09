@@ -9,7 +9,7 @@ function safeHttpUrl(raw) {
   const value = (raw || '').trim();
   if (!value) return '';
   try {
-    const u = new URL(/^[a-z][a-z0-9+.-]*:/i.test(value) ? value : `https://${value}`);
+    const u = new URL(/^[a-z][a-z0-9+.-]*:(?!\d)/i.test(value) ? value : `https://${value}`);
     return u.protocol === 'http:' || u.protocol === 'https:' ? u.href : '';
   } catch {
     return '';

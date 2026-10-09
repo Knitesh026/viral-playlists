@@ -30,7 +30,7 @@ export default function PlaylistGrid({ playlists, onSelectHero, activeHeroId, on
             {/* In-grid ad slots, only when the list is long enough to warrant them */}
             {idx === 4 && playlists.length > 6 && <SponsoredCard />}
             {idx === 9 && playlists.length > 12 && (
-              <div className="flex items-center justify-center"><AdBanner size="300x250" /></div>
+              <div className="flex items-center justify-center"><AdBanner size="300x250" minViewport={340} /></div>
             )}
             <div className="tv-card relative">
               
@@ -118,8 +118,7 @@ export default function PlaylistGrid({ playlists, onSelectHero, activeHeroId, on
                   <div className="flex items-center gap-2.5 text-[11px] text-[#334155]">
                     <button
                       onClick={() => onUpvote(playlist.id)}
-                      aria-label={`Upvote ${playlist.title}`}
-                      aria-pressed={upvotedIds?.has(playlist.id)}
+                      aria-label={upvotedIds?.has(playlist.id) ? `Upvoted ${playlist.title}` : `Upvote ${playlist.title}`}
                       className="flex items-center gap-1 p-1 -m-1 hover:text-rose-600 transition-colors font-semibold cursor-pointer"
                     >
                       <Heart className={`w-3.5 h-3.5 text-rose-500 ${upvotedIds?.has(playlist.id) ? 'fill-rose-500' : 'fill-rose-500/20'}`} />
