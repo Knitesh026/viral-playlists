@@ -32,7 +32,7 @@ export async function fetchSiteMetadataAndThumbnail(rawUrl) {
   try {
     const parsed = new URL(url);
     domain = parsed.hostname.replace(/^www\./, '');
-  } catch (e) {
+  } catch {
     domain = url.replace(/https?:\/\//, '').split('/')[0];
   }
 

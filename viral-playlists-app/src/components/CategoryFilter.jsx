@@ -2,7 +2,7 @@ import React from 'react';
 import { INITIAL_CATEGORIES } from '../data/initialPlaylists';
 import { Radio } from 'lucide-react';
 
-export default function CategoryFilter({ activeCategory, setActiveCategory, playlistCounts, filteredCount, totalCount }) {
+export default function CategoryFilter({ activeCategory, setActiveCategory, filteredCount, totalCount }) {
   return (
     <div className="mx-auto max-w-6xl px-4 sm:px-6 2xl:max-w-7xl pb-6">
       
@@ -29,6 +29,7 @@ export default function CategoryFilter({ activeCategory, setActiveCategory, play
               <button
                 key={cat.id}
                 onClick={() => setActiveCategory(cat.id)}
+                aria-pressed={isActive}
                 className={`chip rounded-full px-4 py-1.5 text-xs sm:text-sm font-semibold transition-all ${isActive ? 'active' : ''}`}
               >
                 <span>{cat.label}</span>

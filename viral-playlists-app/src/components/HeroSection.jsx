@@ -1,7 +1,7 @@
 import React from 'react';
 import { AnimatedMarqueeHero } from '@/components/ui/hero-3';
 
-export default function HeroSection({ playlists, activeHeroId, onSelectHero, onUpvote, onOpenSubmitModal }) {
+export default function HeroSection({ playlists, onSelectHero, onOpenSubmitModal }) {
   // Extract thumbnail URLs for the animated marquee
   const marqueeImages = playlists.map(p => p.thumbnailUrl).filter(Boolean);
 
