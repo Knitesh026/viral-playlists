@@ -11,6 +11,9 @@ import ResponsiveLeaderboard from './components/ads/ResponsiveLeaderboard';
 import NativeBanner from './components/ads/NativeBanner';
 import usePopunder from './components/ads/usePopunder';
 
+// Filler words ignored when a search phrase is split into terms
+const STOP_WORDS = new Set(['का', 'के', 'की', 'से', 'में', 'और', 'the', 'of', 'and', 'for', 'in']);
+
 const LOCAL_STORAGE_KEY = 'viral_playlists_user_submissions';
 const UPVOTES_KEY = 'viral_playlists_upvotes';
 
@@ -20,7 +23,9 @@ export default function App() {
       const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        return [...parsed, ...INITIAL_PLAYLISTS];
+        // Ignore malformed entries (old data, hand-edited storage)
+        const valid = Array.isArray(parsed) ? parsed.filter(p => p && typeof p.id === 'string' && p.title && p.url) : [];
+        return [...valid, ...INITIAL_PLAYLISTS];
       }
     } catch (err) {
       console.error('Failed to load local storage playlists', err);
@@ -82,28 +87,31 @@ export default function App() {
 
   // Filtered playlists
   const filteredPlaylists = useMemo(() => {
-    const list = votedPlaylists.filter(p => {
-      const matchesCat = activeCategory === 'all' || p.category === activeCategory;
-      const q = searchQuery.toLowerCase().trim();
-      if (!q) return matchesCat;
+    const terms = searchQuery.toLowerCase().split(/\s+/).filter(t => t.length >= 2 && !STOP_WORDS.has(t));
+    const scoreOf = (p) => {
+      const haystack = [p.title, p.desc, p.owner, p.url, ...(p.tags || []), ...(p.aliases || [])]
+        .filter(Boolean).join(' ').toLowerCase();
+      return terms.filter(t => haystack.includes(t)).length;
+    };
 
-      const matchesSearch =
-        p.title.toLowerCase().includes(q) ||
-        p.desc.toLowerCase().includes(q) ||
-        (p.owner && p.owner.toLowerCase().includes(q)) ||
-        p.url.toLowerCase().includes(q) ||
-        (p.tags && p.tags.some(t => t.toLowerCase().includes(q)));
+    let list = votedPlaylists.filter(p => {
+      const matchesCat = activeCategory === 'all' || p.category === activeCategory;
+      if (terms.length === 0) return matchesCat;
+      // A multi-word phrase matches when any of its words appears in the listing's text
+      const matchesSearch = scoreOf(p) > 0;
 
       return matchesCat && matchesSearch;
     });
 
+    // With a search phrase, the listings matching the most words come first
+    if (terms.length > 0 && sort === 'curated') {
+      const scores = new Map(list.map(p => [p.id, scoreOf(p)]));
+      list = [...list].sort((a, b) => scores.get(b.id) - scores.get(a.id));
+    }
+
     if (sort === 'upvotes') return [...list].sort((a, b) => (b.upvotes || 0) - (a.upvotes || 0));
     if (sort === 'views') return [...list].sort((a, b) => (b.views || 0) - (a.views || 0));
-    if (sort === 'newest') {
-      // User submissions carry a timestamp in their id; the curated list keeps its order after them
-      const ts = (p) => (p.id.startsWith('custom-') ? Number(p.id.slice(7)) : 0);
-      return [...list].sort((a, b) => ts(b) - ts(a));
-    }
+    if (sort === 'newest') return [...list].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
     return list;
   }, [votedPlaylists, activeCategory, searchQuery, sort]);
 

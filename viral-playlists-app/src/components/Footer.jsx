@@ -27,8 +27,8 @@ export default function Footer({ onOpenSubmitModal, setActiveCategory }) {
 
         <nav aria-label="Browse categories">
           <h2 className="text-xs font-bold uppercase tracking-widest text-[#546575]">Browse</h2>
-          <ul className="mt-3 space-y-1.5 text-sm font-medium">
-            {INITIAL_CATEGORIES.filter((c) => c.id !== 'all').slice(0, 6).map((c) => (
+          <ul className="mt-3 grid grid-cols-1 gap-y-1.5 text-sm font-medium sm:grid-cols-2">
+            {INITIAL_CATEGORIES.filter((c) => c.id !== 'all').map((c) => (
               <li key={c.id}>
                 <button onClick={() => goTo(c.id)} className="cursor-pointer text-[#334155] hover:text-[#2489d3]">
                   {c.label}

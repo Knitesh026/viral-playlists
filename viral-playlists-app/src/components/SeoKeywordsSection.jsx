@@ -89,7 +89,7 @@ const FAQS = [
   },
   {
     question: "Are all site thumbnails fetched automatically from live URLs?",
-    answer: "Yes! Every single playlist thumbnail in our directory is generated live from its website URL using high-resolution web screenshot APIs."
+    answer: "Usually. Thumbnails are generated from each site's URL by a screenshot service, and submitters can supply their own image instead. If a screenshot can't be loaded, the card shows the site name and address."
   }
 ];
 
@@ -141,7 +141,7 @@ export default function SeoKeywordsSection({ setSearchQuery, setActiveCategory, 
                   <button
                     onClick={() => {
                       setActiveCategory('all');
-                      setSearchQuery(kw.split(' ')[0]);
+                      setSearchQuery(kw);
                       showDirectory();
                     }}
                     className="cursor-pointer rounded-full border border-current/20 bg-white/80 px-2.5 py-1 text-xs font-semibold text-[#17212b] transition-colors hover:bg-white"

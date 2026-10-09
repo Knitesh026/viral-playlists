@@ -153,6 +153,7 @@ html, body {
 
 html {
   scroll-behavior: smooth;
+  scroll-padding-top: 5.5rem; /* clears the fixed navbar for every in-page scroll */
 }
 
 @media (prefers-reduced-motion: reduce) {

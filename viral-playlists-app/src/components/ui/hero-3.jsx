@@ -37,7 +37,8 @@ export const AnimatedMarqueeHero = ({
 
   const reduceMotion = useReducedMotion();
 
-  // Two identical halves, translated by exactly -50%, give a seamless loop
+  // Two identical halves in a content-sized track (w-max) with per-item margins (no flex gap),
+  // so translating by exactly -50% moves one full copy and the loop has no seam
   const duplicatedImages = React.useMemo(() => {
     if (!images || images.length === 0) return [];
     return [...images, ...images];
@@ -121,7 +122,7 @@ export const AnimatedMarqueeHero = ({
       {/* Animated Image Marquee Carousel at bottom with performance lazy loading */}
       <div className="w-full mt-6 md:mt-8 overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_10%,black_90%,transparent)]">
         <motion.div
-          className="flex gap-6 sm:gap-8 py-6"
+          className="flex w-max py-6"
           animate={reduceMotion ? undefined : { x: ["0%", "-50%"] }}
           transition={{ ease: "linear", duration: Math.max(20, images.length * 4), repeat: Infinity }}
         >
@@ -132,9 +133,9 @@ export const AnimatedMarqueeHero = ({
               aria-label={`Show ${names?.[index % images.length] || "site"} in the directory`}
               whileHover={{ scale: 1.05, rotate: 0 }}
               onClick={() => onImageClick && onImageClick(index % images.length)}
-              className="relative aspect-[16/10] h-36 sm:h-48 md:h-56 w-56 sm:w-[300px] md:w-[360px] flex-shrink-0 cursor-pointer rounded-3xl overflow-hidden shadow-2xl border-4 border-white bg-slate-900 transition-all duration-300"
+              className="relative aspect-[16/10] h-36 sm:h-48 md:h-56 w-56 sm:w-[300px] md:w-[360px] mr-6 sm:mr-8 flex-shrink-0 cursor-pointer rounded-3xl overflow-hidden shadow-2xl border-4 border-white bg-slate-900 transition-all duration-300"
               style={{
-                rotate: `${index % 2 === 0 ? -3 : 4}deg`,
+                rotate: `${(index % images.length) % 2 === 0 ? -3 : 4}deg`,
               }}
             >
               <img

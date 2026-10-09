@@ -43,7 +43,8 @@ function Thumb({ src, title, url, priority }) {
         height="253"
         onLoad={() => setState('ok')}
         onError={() => setState('failed')}
-        className={state === 'ok' ? '' : 'opacity-0'}
+        aria-hidden={state !== 'ok'}
+        className={state === 'ok' ? '' : 'invisible'}
       />
     </div>
   );
@@ -157,9 +158,10 @@ function Card({ playlist, idx, highlighted, voted, onUpvote }) {
 }
 
 export default function PlaylistGrid({ playlists, focusId, onUpvote, upvotedIds, onReset, onOpenSubmitModal }) {
+  // #directory stays mounted even when empty so scroll-to-directory always has a target
   if (playlists.length === 0) {
     return (
-      <div className="py-16 text-center">
+      <div id="directory" className="py-16 text-center scroll-mt-24">
         <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full border border-[#cfe3f2] bg-white text-[#2489d3]">
           <Sparkles className="h-6 w-6" />
         </div>
@@ -186,7 +188,7 @@ export default function PlaylistGrid({ playlists, focusId, onUpvote, upvotedIds,
           <React.Fragment key={playlist.id}>
             {idx === 4 && playlists.length > 6 && <SponsoredCard />}
             {idx === 9 && playlists.length > 12 && (
-              <div className="flex items-center justify-center"><AdBanner size="300x250" minViewport={340} /></div>
+              <AdBanner size="300x250" minViewport={340} className="justify-center" />
             )}
             <Card
               playlist={playlist}

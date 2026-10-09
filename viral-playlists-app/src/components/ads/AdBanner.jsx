@@ -48,7 +48,14 @@ function AdSlot({ size, className }) {
   }, [size]);
 
   return (
-    <div className={`flex flex-col items-center ${filled ? className : ''}`}>
+    <div
+      className={
+        filled
+          ? `flex flex-col items-center ${className}`
+          : // out of flow until the ad renders, so an unfilled slot leaves no grid cell or gap
+            'pointer-events-none absolute h-0 w-0 overflow-hidden opacity-0'
+      }
+    >
       <span hidden={!filled} className="mb-1 font-mono2 text-[10px] uppercase tracking-widest text-[#546575]/70">
         Advertisement
       </span>

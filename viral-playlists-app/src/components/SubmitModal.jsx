@@ -130,6 +130,7 @@ export default function SubmitModal({ isOpen, onClose, onSubmitSuccess }) {
       socialUrl: socialLink || (finalOwner ? `https://${socialPlatform === 'instagram' ? 'instagram.com/' : 'x.com/'}${finalOwner.replace('@', '')}` : ''),
       url: siteUrl,
       category,
+      createdAt: Date.now(),
       views: 1,
       upvotes: 1,
       featured: true,

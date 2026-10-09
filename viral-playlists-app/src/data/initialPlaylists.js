@@ -13,7 +13,7 @@ export const INITIAL_CATEGORIES = [
   { id: "rozmarra", label: "Everyday Vibe", icon: "Coffee" },
 ];
 
-export const INITIAL_PLAYLISTS = [
+const RAW_PLAYLISTS = [
   {
     id: "deluxe-saloon",
     title: "Deluxe Saloon",
@@ -195,3 +195,25 @@ export const INITIAL_PLAYLISTS = [
     tags: ["Ghazals", "Late Night", "Acoustic"]
   }
 ];
+
+// Hindi search aliases so the Hindi quick-search chips (and Hindi typing) find matching sites.
+// Every entry also carries the generic term so "वायरल प्लेलिस्ट" lists them all.
+const HINDI_ALIASES = {
+  'deluxe-saloon': ['नाई की दुकान के गाने', 'सलून', '90s बॉलीवुड'],
+  'haryana-roadways': ['हरियाणा रोडवेज', 'बस गाने'],
+  'cutting-shop': ['कटिंग शॉप', 'सलून'],
+  'nani-ka-ghar': ['नानी का घर', 'पुराने गाने', 'रेडियो'],
+  'school-ke-baad': ['स्कूल के बाद', 'कार्टून', 'बचपन'],
+  'digital-bus': ['डिजिटल बस', 'रात का सफर'],
+  'bhojpuri-raat': ['भोजपुरी रात', 'भोजपुरी'],
+  'baraat-band': ['शादी बारात बैंड', 'बारात', 'शादी'],
+  'auto-waala': ['ऑटो वाला', 'ऑटो रिक्शा'],
+  'kappiyum-paattum': ['मल्यालम चाय दुकान', 'मलयालम', 'चाय'],
+  'pahadi-radio': ['उत्तराखंड पहाड़ी बस', 'पहाड़ी', 'उत्तराखंड'],
+  'mehfil': ['महफ़िल गज़ल', 'गज़ल', 'रात के गाने'],
+};
+
+export const INITIAL_PLAYLISTS = RAW_PLAYLISTS.map((p) => ({
+  ...p,
+  aliases: ['वायरल प्लेलिस्ट', ...(HINDI_ALIASES[p.id] || [])],
+}));
