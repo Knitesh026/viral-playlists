@@ -1,8 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { X, Sparkles, Link as LinkIcon, Image as ImageIcon, Loader2, CheckCircle2, Radio, Globe } from 'lucide-react';
 import { INITIAL_CATEGORIES } from '../data/initialPlaylists';
 import { fetchSiteMetadataAndThumbnail } from '../services/thumbnailService';
 import { InstagramIcon, TwitterIcon } from './SocialIcons';
+
+// Accept only http(s) URLs; returns a normalised URL or '' when invalid.
+function safeHttpUrl(raw) {
+  const value = (raw || '').trim();
+  if (!value) return '';
+  try {
+    const u = new URL(/^[a-z][a-z0-9+.-]*:/i.test(value) ? value : `https://${value}`);
+    return u.protocol === 'http:' || u.protocol === 'https:' ? u.href : '';
+  } catch {
+    return '';
+  }
+}
 
 export default function SubmitModal({ isOpen, onClose, onSubmitSuccess }) {
   const [url, setUrl] = useState('');
@@ -19,6 +31,25 @@ export default function SubmitModal({ isOpen, onClose, onSubmitSuccess }) {
   const [fetchSuccess, setFetchSuccess] = useState(false);
   const [customThumbnail, setCustomThumbnail] = useState('');
 
+  // Latest title/desc for the debounced fetch, so edits aren't overwritten by stale closures
+  const titleRef = useRef(title);
+  const descRef = useRef(desc);
+  titleRef.current = title;
+  descRef.current = desc;
+
+  // Close on Escape and lock background scroll while open
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e) => e.key === 'Escape' && onClose();
+    document.addEventListener('keydown', onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [isOpen, onClose]);
+
   // Debounced auto-fetch when URL changes
   useEffect(() => {
     if (!url || url.trim().length < 4) {
@@ -34,8 +65,8 @@ export default function SubmitModal({ isOpen, onClose, onSubmitSuccess }) {
       try {
         const meta = await fetchSiteMetadataAndThumbnail(url);
         setThumbnailUrl(meta.thumbnailUrl);
-        if (!title) setTitle(meta.title);
-        if (!desc) setDesc(meta.description);
+        if (!titleRef.current) setTitle(meta.title);
+        if (!descRef.current) setDesc(meta.description);
         setFetchSuccess(true);
       } catch (err) {
         console.error('Thumbnail fetch error:', err);
@@ -52,7 +83,10 @@ export default function SubmitModal({ isOpen, onClose, onSubmitSuccess }) {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    if (!url || !title) return;
+    const siteUrl = safeHttpUrl(url);
+    if (!siteUrl || !title.trim()) return;
+    const imageUrl = customThumbnail.trim() ? safeHttpUrl(customThumbnail) : '';
+    const socialLink = socialUrl.trim() ? safeHttpUrl(socialUrl) : '';
 
     let finalOwner = owner.trim();
     if (finalOwner && !finalOwner.startsWith('@')) {
@@ -65,13 +99,13 @@ export default function SubmitModal({ isOpen, onClose, onSubmitSuccess }) {
       desc: desc.trim() || 'A viral user-submitted playlist site.',
       owner: finalOwner || '@community',
       socialPlatform,
-      socialUrl: socialUrl.trim() || (finalOwner ? `https://${socialPlatform === 'instagram' ? 'instagram.com/' : 'x.com/'}${finalOwner.replace('@', '')}` : ''),
-      url: url.trim().startsWith('http') ? url.trim() : `https://${url.trim()}`,
+      socialUrl: socialLink || (finalOwner ? `https://${socialPlatform === 'instagram' ? 'instagram.com/' : 'x.com/'}${finalOwner.replace('@', '')}` : ''),
+      url: siteUrl,
       category,
       views: 1,
       upvotes: 1,
       featured: true,
-      thumbnailUrl: customThumbnail.trim() || thumbnailUrl || `https://s.wordpress.com/mshots/v1/${encodeURIComponent(url.trim())}?w=450`,
+      thumbnailUrl: imageUrl || thumbnailUrl || `https://s.wordpress.com/mshots/v1/${encodeURIComponent(siteUrl)}?w=450`,
       tags: ['User Submitted', category]
     };
 
@@ -89,7 +123,13 @@ export default function SubmitModal({ isOpen, onClose, onSubmitSuccess }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 bg-[#0b0f19]/75 backdrop-blur-md overflow-y-auto">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="submit-modal-title"
+      onMouseDown={(e) => e.target === e.currentTarget && onClose()}
+      className="fixed inset-0 z-[60] flex items-start sm:items-center justify-center p-2 sm:p-4 md:p-6 bg-[#0b0f19]/75 backdrop-blur-md overflow-y-auto"
+    >
       
       {/* Doubled 2x Desktop Width Container: max-w-4xl & Responsive for Mobile */}
       <div className="relative w-full max-w-full sm:max-w-2xl md:max-w-3xl lg:max-w-4xl bg-[#eef6fc] border border-[#cfe3f2] rounded-3xl shadow-2xl overflow-hidden my-4 sm:my-8 text-[#12212e]">
@@ -101,7 +141,7 @@ export default function SubmitModal({ isOpen, onClose, onSubmitSuccess }) {
               <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-[#2489d3]" />
             </div>
             <div>
-              <h3 className="font-display text-xl sm:text-2xl text-[#12212e] leading-tight">
+              <h3 id="submit-modal-title" className="font-display text-xl sm:text-2xl text-[#12212e] leading-tight">
                 Submit Your Viral Playlist Site
               </h3>
               <p className="text-xs sm:text-sm text-[#4d6578] font-medium">

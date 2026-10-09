@@ -1,9 +1,6 @@
-import React, { useState } from 'react';
-import { Sparkles, Tag, HelpCircle, Flame, ArrowRight, Globe } from 'lucide-react';
+import React from 'react';
 
-export default function SeoKeywordsSection({ playlists, setSearchQuery, setActiveCategory, onOpenSubmitModal }) {
-  const [openFaqIndex, setOpenFaqIndex] = useState(0);
-
+export default function SeoKeywordsSection({ setSearchQuery, setActiveCategory, onOpenSubmitModal }) {
   const SEO_KEYWORD_CLUSTERS = [
     {
       category: "Barber Shop & Saloon (नाई की दुकान 90s)",

@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function Footer({ totalCount, onOpenSubmitModal }) {
+export default function Footer({ onOpenSubmitModal }) {
   return (
     <footer className="border-t border-[#dcd8cc] pb-16 pt-12 mt-12 bg-white/40">
       <div className="mx-auto max-w-3xl px-4 text-center sm:px-6">

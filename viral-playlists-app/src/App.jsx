@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { INITIAL_PLAYLISTS } from './data/initialPlaylists';
 import Navbar from './components/Navbar';
 import HeroSection from './components/HeroSection';
@@ -7,6 +7,9 @@ import PlaylistGrid from './components/PlaylistGrid';
 import SeoKeywordsSection from './components/SeoKeywordsSection';
 import SubmitModal from './components/SubmitModal';
 import Footer from './components/Footer';
+import ResponsiveLeaderboard from './components/ads/ResponsiveLeaderboard';
+import NativeBanner from './components/ads/NativeBanner';
+import usePopunder from './components/ads/usePopunder';
 
 const LOCAL_STORAGE_KEY = 'viral_playlists_user_submissions';
 const UPVOTES_KEY = 'viral_playlists_upvotes';
@@ -19,8 +22,8 @@ export default function App() {
         const parsed = JSON.parse(saved);
         return [...parsed, ...INITIAL_PLAYLISTS];
       }
-    } catch (e) {
-      console.error('Failed to load local storage playlists', e);
+    } catch (err) {
+      console.error('Failed to load local storage playlists', err);
     }
     return INITIAL_PLAYLISTS;
   });
@@ -29,41 +32,47 @@ export default function App() {
     try {
       const saved = localStorage.getItem(UPVOTES_KEY);
       return saved ? new Set(JSON.parse(saved)) : new Set();
-    } catch (e) {
+    } catch {
       return new Set();
     }
   });
 
-  const [searchQuery, setSearchQuery] = useState('');
+  // Support shareable links such as /?q=saloon (advertised in the JSON-LD SearchAction)
+  const [searchQuery, setSearchQuery] = useState(
+    () => new URLSearchParams(window.location.search).get('q') || ''
+  );
   const [activeCategory, setActiveCategory] = useState('all');
-  
-  // Active Hero playlist ID for Carousel
-  const [heroPlaylist, setHeroPlaylist] = useState(() => {
-    return playlists.find(p => p.featured) || playlists[0];
-  });
+
+  // Only the id is stored; the playlist itself is derived so vote counts never go stale
+  const [heroId, setHeroId] = useState(() => (playlists.find(p => p.featured) || playlists[0])?.id);
+
+  usePopunder();
 
   const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+  const toastTimer = useRef();
+  const closeSubmitModal = useCallback(() => setIsSubmitModalOpen(false), []);
 
   // Save upvotes to local storage
   useEffect(() => {
     try {
       localStorage.setItem(UPVOTES_KEY, JSON.stringify(Array.from(upvotedIds)));
-    } catch (e) {}
+    } catch {
+      // storage unavailable (private mode / quota) - votes just won't persist
+    }
   }, [upvotedIds]);
 
-  // Compute category counts
-  const categoryCounts = useMemo(() => {
-    const counts = { all: playlists.length };
-    playlists.forEach(p => {
-      counts[p.category] = (counts[p.category] || 0) + 1;
-    });
-    return counts;
-  }, [playlists]);
+  useEffect(() => () => clearTimeout(toastTimer.current), []);
+
+  // Vote counts are derived (base + this browser's vote) so they survive reloads
+  const votedPlaylists = useMemo(
+    () => playlists.map(p => (upvotedIds.has(p.id) ? { ...p, upvotes: (p.upvotes || 0) + 1 } : p)),
+    [playlists, upvotedIds]
+  );
 
   // Filtered playlists
   const filteredPlaylists = useMemo(() => {
-    return playlists.filter(p => {
+    return votedPlaylists.filter(p => {
       const matchesCat = activeCategory === 'all' || p.category === activeCategory;
       const q = searchQuery.toLowerCase().trim();
       if (!q) return matchesCat;
@@ -77,25 +86,22 @@ export default function App() {
 
       return matchesCat && matchesSearch;
     });
-  }, [playlists, activeCategory, searchQuery]);
+  }, [votedPlaylists, activeCategory, searchQuery]);
+
+  const showToast = useCallback((msg) => {
+    setToastMessage(msg);
+    clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToastMessage(''), 3500);
+  }, []);
 
   const handleSelectHero = (playlist) => {
-    setHeroPlaylist(playlist);
+    setHeroId(playlist.id);
     showToast(`Featured "${playlist.title}" in Hero Carousel!`);
   };
 
   const handleUpvote = (id) => {
     if (upvotedIds.has(id)) return;
-
     setUpvotedIds(prev => new Set([...prev, id]));
-    setPlaylists(prev =>
-      prev.map(p => (p.id === id ? { ...p, upvotes: (p.upvotes || 0) + 1 } : p))
-    );
-
-    if (heroPlaylist && heroPlaylist.id === id) {
-      setHeroPlaylist(prev => ({ ...prev, upvotes: (prev.upvotes || 0) + 1 }));
-    }
-
     showToast('Upvoted playlist site!');
   };
 
@@ -107,19 +113,15 @@ export default function App() {
     try {
       const userCustoms = updatedPlaylists.filter(p => p.id.startsWith('custom-'));
       localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(userCustoms));
-    } catch (e) {
-      console.error('LocalStorage write error:', e);
+    } catch (err) {
+      console.error('LocalStorage write error:', err);
     }
 
     // Set new playlist as Active in Hero Carousel automatically
-    setHeroPlaylist(newPlaylist);
+    setHeroId(newPlaylist.id);
     showToast(`🎉 "${newPlaylist.title}" submitted & featured in Hero Carousel!`);
   };
 
-  const showToast = (msg) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(''), 3500);
-  };
 
   return (
     <div className="min-h-screen bg-[#f0eee6] text-[#17212b] font-sans">
@@ -137,40 +139,45 @@ export default function App() {
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
         onOpenSubmitModal={() => setIsSubmitModalOpen(true)}
-        totalCount={playlists.length}
+        totalCount={votedPlaylists.length}
       />
 
       <main className="mx-auto max-w-[95vw] px-2 sm:px-4 pt-20 sm:pt-24 md:pt-28">
 
         {/* Main Hero Thumbnail Carousel */}
         <HeroSection
-          playlists={playlists}
-          activeHeroId={heroPlaylist?.id}
+          playlists={votedPlaylists}
+          activeHeroId={heroId}
           onSelectHero={handleSelectHero}
           onUpvote={handleUpvote}
           onOpenSubmitModal={() => setIsSubmitModalOpen(true)}
         />
 
+        {/* Ad: responsive leaderboard (728x90 desktop / 320x50 mobile) */}
+        <ResponsiveLeaderboard className="mb-6" />
+
         {/* Category Filter Chips */}
         <CategoryFilter
           activeCategory={activeCategory}
           setActiveCategory={setActiveCategory}
-          playlistCounts={categoryCounts}
           filteredCount={filteredPlaylists.length}
-          totalCount={playlists.length}
+          totalCount={votedPlaylists.length}
         />
 
         {/* Playlist Card Grid */}
         <PlaylistGrid
           playlists={filteredPlaylists}
           onSelectHero={handleSelectHero}
-          activeHeroId={heroPlaylist?.id}
+          activeHeroId={heroId}
           onUpvote={handleUpvote}
+          upvotedIds={upvotedIds}
         />
+
+        {/* Ad: native banner (one per page) */}
+        <NativeBanner className="mb-10" />
 
         {/* SEO Keywords, Topic Clusters & FAQ Directory Hub */}
         <SeoKeywordsSection
-          playlists={playlists}
           setSearchQuery={setSearchQuery}
           setActiveCategory={setActiveCategory}
           onOpenSubmitModal={() => setIsSubmitModalOpen(true)}
@@ -180,13 +187,12 @@ export default function App() {
       {/* Submission Modal Dialog */}
       <SubmitModal
         isOpen={isSubmitModalOpen}
-        onClose={() => setIsSubmitModalOpen(false)}
+        onClose={closeSubmitModal}
         onSubmitSuccess={handleSubmitSuccess}
       />
 
       {/* Footer */}
       <Footer
-        totalCount={playlists.length}
         onOpenSubmitModal={() => setIsSubmitModalOpen(true)}
       />
 

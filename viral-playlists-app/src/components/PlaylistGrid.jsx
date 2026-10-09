@@ -1,8 +1,10 @@
 import React from 'react';
 import { ExternalLink, Heart, Eye, Sparkles } from 'lucide-react';
+import AdBanner from './ads/AdBanner';
+import SponsoredCard from './ads/SponsoredCard';
 import { InstagramIcon, TwitterIcon } from './SocialIcons';
 
-export default function PlaylistGrid({ playlists, onSelectHero, activeHeroId, onUpvote }) {
+export default function PlaylistGrid({ playlists, onSelectHero, activeHeroId, onUpvote, upvotedIds }) {
   if (playlists.length === 0) {
     return (
       <div className="py-16 text-center">
@@ -24,7 +26,13 @@ export default function PlaylistGrid({ playlists, onSelectHero, activeHeroId, on
           const isActiveHero = activeHeroId === playlist.id;
 
           return (
-            <div key={playlist.id} className="tv-card relative">
+            <React.Fragment key={playlist.id}>
+            {/* In-grid ad slots, only when the list is long enough to warrant them */}
+            {idx === 4 && playlists.length > 6 && <SponsoredCard />}
+            {idx === 9 && playlists.length > 12 && (
+              <div className="flex items-center justify-center"><AdBanner size="300x250" /></div>
+            )}
+            <div className="tv-card relative">
               
               {/* TV Glow backdrop */}
               <div className={`tv-glow ${isActiveHero ? 'opacity-100' : ''}`} />
@@ -32,6 +40,9 @@ export default function PlaylistGrid({ playlists, onSelectHero, activeHeroId, on
               {/* Retro TV Frame Container */}
               <div 
                 className="cursor-pointer"
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), onSelectHero(playlist))}
                 onClick={() => onSelectHero(playlist)}
                 title="Click to feature thumbnail in Hero Carousel"
               >
@@ -108,9 +119,10 @@ export default function PlaylistGrid({ playlists, onSelectHero, activeHeroId, on
                     <button
                       onClick={() => onUpvote(playlist.id)}
                       aria-label={`Upvote ${playlist.title}`}
-                      className="flex items-center gap-1 hover:text-rose-600 transition-colors font-semibold"
+                      aria-pressed={upvotedIds?.has(playlist.id)}
+                      className="flex items-center gap-1 p-1 -m-1 hover:text-rose-600 transition-colors font-semibold cursor-pointer"
                     >
-                      <Heart className="w-3 h-3 text-rose-500 fill-rose-500/20" />
+                      <Heart className={`w-3.5 h-3.5 text-rose-500 ${upvotedIds?.has(playlist.id) ? 'fill-rose-500' : 'fill-rose-500/20'}`} />
                       <span>{playlist.upvotes || 0}</span>
                     </button>
 
@@ -124,6 +136,7 @@ export default function PlaylistGrid({ playlists, onSelectHero, activeHeroId, on
               </div>
 
             </div>
+            </React.Fragment>
           );
         })}
       </div>
