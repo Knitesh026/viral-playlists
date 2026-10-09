@@ -24,6 +24,8 @@ export default function SubmitModal({ isOpen, onClose, onSubmitSuccess }) {
   const [socialPlatform, setSocialPlatform] = useState('twitter');
   const [socialUrl, setSocialUrl] = useState('');
   const [desc, setDesc] = useState('');
+  const [urlError, setUrlError] = useState('');
+  const dialogRef = useRef(null);
   
   // Thumbnail auto-fetch states
   const [thumbnailUrl, setThumbnailUrl] = useState('');
@@ -37,16 +39,38 @@ export default function SubmitModal({ isOpen, onClose, onSubmitSuccess }) {
   titleRef.current = title;
   descRef.current = desc;
 
-  // Close on Escape and lock background scroll while open
+  // Dialog behaviour: Escape closes, Tab stays inside, focus moves in on open and
+  // returns to the opener on close, and the page behind doesn't scroll.
   useEffect(() => {
     if (!isOpen) return;
-    const onKey = (e) => e.key === 'Escape' && onClose();
+    const opener = document.activeElement;
+    const dialog = dialogRef.current;
+    const focusables = () =>
+      dialog.querySelectorAll('a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex="-1"])');
+    (focusables()[1] || dialog).focus(); // skip the close button; land on the first field
+
+    const onKey = (e) => {
+      if (e.key === 'Escape') return onClose();
+      if (e.key !== 'Tab') return;
+      const els = [...focusables()];
+      if (!els.length) return;
+      const first = els[0];
+      const last = els[els.length - 1];
+      if (e.shiftKey && (document.activeElement === first || document.activeElement === dialog)) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
     document.addEventListener('keydown', onKey);
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => {
       document.removeEventListener('keydown', onKey);
       document.body.style.overflow = prev;
+      opener?.focus?.();
     };
   }, [isOpen, onClose]);
 
@@ -84,7 +108,11 @@ export default function SubmitModal({ isOpen, onClose, onSubmitSuccess }) {
     e.preventDefault();
 
     const siteUrl = safeHttpUrl(url);
-    if (!siteUrl || !title.trim()) return;
+    if (!siteUrl) {
+      setUrlError('Please enter a valid website address, e.g. example.com');
+      return;
+    }
+    if (!title.trim()) return;
     const imageUrl = customThumbnail.trim() ? safeHttpUrl(customThumbnail) : '';
     const socialLink = socialUrl.trim() ? safeHttpUrl(socialUrl) : '';
 
@@ -124,6 +152,8 @@ export default function SubmitModal({ isOpen, onClose, onSubmitSuccess }) {
 
   return (
     <div
+      ref={dialogRef}
+      tabIndex={-1}
       role="dialog"
       aria-modal="true"
       aria-labelledby="submit-modal-title"
@@ -178,11 +208,11 @@ export default function SubmitModal({ isOpen, onClose, onSubmitSuccess }) {
                 <div className="relative">
                   <LinkIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#4d6578]" />
                   <input
-                    type="url"
+                    type="text" inputMode="url" autoCapitalize="none"
                     required
                     placeholder="https://haryanaroadways.wtf"
                     value={url}
-                    onChange={(e) => setUrl(e.target.value)}
+                    onChange={(e) => { setUrl(e.target.value); setUrlError(''); }}
                     className="w-full bg-white border border-[#cfe3f2] text-[#12212e] text-xs sm:text-sm rounded-2xl pl-10 pr-10 py-3 outline-none focus:border-[#2489d3] focus:ring-2 focus:ring-[#2489d3]/20 transition-all placeholder:text-[#4d6578] font-medium"
                   />
                   {isFetchingThumbnail && (
@@ -192,6 +222,9 @@ export default function SubmitModal({ isOpen, onClose, onSubmitSuccess }) {
                     <CheckCircle2 className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-emerald-600" />
                   )}
                 </div>
+                {urlError && (
+                  <p role="alert" className="mt-1.5 text-xs font-semibold text-rose-600">{urlError}</p>
+                )}
               </div>
 
               {/* Auto-Fetched Live Screenshot Card */}
@@ -317,7 +350,7 @@ export default function SubmitModal({ isOpen, onClose, onSubmitSuccess }) {
                 <div>
                   <label className="block text-[#4d6578] text-xs font-semibold mb-1">Social Media Post or Profile Link</label>
                   <input
-                    type="url"
+                    type="text" inputMode="url" autoCapitalize="none"
                     placeholder={`https://${socialPlatform === 'twitter' ? 'x.com' : 'instagram.com'}/...`}
                     value={socialUrl}
                     onChange={(e) => setSocialUrl(e.target.value)}
@@ -346,7 +379,7 @@ export default function SubmitModal({ isOpen, onClose, onSubmitSuccess }) {
                   Custom Image Link <span className="text-[#4d6578] lowercase">(optional override)</span>
                 </label>
                 <input
-                  type="url"
+                  type="text" inputMode="url" autoCapitalize="none"
                   placeholder="https://images.unsplash.com/... (leave blank for auto screenshot)"
                   value={customThumbnail}
                   onChange={(e) => setCustomThumbnail(e.target.value)}

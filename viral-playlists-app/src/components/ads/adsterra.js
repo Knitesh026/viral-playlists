@@ -25,7 +25,8 @@ export const SMARTLINK =
   'https://www.profitableratecpmnetwork.com/zhpef5hsqc?key=8d12e86c4bfff0880bef59a6c3a446c1';
 
 // Banner invoke.js reads the global `atOptions` when it runs, so only one banner
-// may load at a time. Queue loads to keep several banners on a page from clobbering it.
+// may load at a time. Queue loads (advancing only on the script's own load/error event)
+// so a slow script can never read the next banner's options.
 let queue = Promise.resolve();
 
 export function loadBanner(container, { key, width, height }, isCancelled) {
@@ -39,7 +40,6 @@ export function loadBanner(container, { key, width, height }, isCancelled) {
         s.async = true;
         s.onload = s.onerror = () => resolve();
         container.appendChild(s);
-        setTimeout(resolve, 5000); // never block the queue on a slow ad
       })
   );
 }

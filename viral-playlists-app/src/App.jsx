@@ -48,6 +48,15 @@ export default function App() {
 
   usePopunder();
 
+  // Keep the address bar shareable: mirror the search text into ?q= (other params preserved)
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    const q = searchQuery.trim();
+    if (q) url.searchParams.set('q', q);
+    else url.searchParams.delete('q');
+    if (url.href !== window.location.href) window.history.replaceState(null, '', url);
+  }, [searchQuery]);
+
   const [isSubmitModalOpen, setIsSubmitModalOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const toastTimer = useRef();
