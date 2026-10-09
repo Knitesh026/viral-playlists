@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 // Reusable Action Button component
@@ -11,11 +11,51 @@ const ActionButton = ({ children, onClick }) => (
     whileTap={{ scale: 0.95 }}
     onClick={onClick}
     aria-label="Submit your viral playlist site"
-    className="mt-6 px-8 py-3 rounded-full bg-[#2489d3] text-white font-bold shadow-xl transition-all hover:bg-[#1f7fc7] hover:shadow-2xl focus:outline-none focus:ring-2 focus:ring-[#2489d3] focus:ring-opacity-75 cursor-pointer flex items-center gap-2"
+    className="mt-5 px-7 py-2.5 rounded-full bg-[#2489d3] text-white font-bold shadow-xl transition-all hover:bg-[#1f7fc7] hover:shadow-2xl focus:outline-none focus:ring-2 focus:ring-[#2489d3] focus:ring-opacity-75 cursor-pointer flex items-center gap-2"
   >
     {children}
   </motion.button>
 );
+
+// One marquee slide. The second half of the track is a visual clone, so it is hidden from
+// assistive tech and the tab order; a failed screenshot falls back to a visible site name.
+const Slide = ({ src, name, tilt, isClone, onClick, eager }) => {
+  const [failed, setFailed] = React.useState(false);
+  return (
+    <motion.button
+      type="button"
+      aria-label={`Show ${name || "site"} in the directory`}
+      aria-hidden={isClone || undefined}
+      tabIndex={isClone ? -1 : undefined}
+      whileHover={{ scale: 1.05, rotate: 0 }}
+      onClick={onClick}
+      className="relative aspect-[16/10] h-36 sm:h-48 md:h-56 w-56 sm:w-[300px] md:w-[360px] mr-6 sm:mr-8 flex-shrink-0 cursor-pointer rounded-3xl overflow-hidden shadow-2xl border-4 border-white bg-slate-900 transition-all duration-300"
+      style={{ rotate: `${tilt}deg` }}
+    >
+      {failed ? (
+        <span className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-[#1b2733] to-[#0b1118] px-4 font-display text-2xl text-white/90">
+          {name}
+        </span>
+      ) : (
+        <img
+          src={src}
+          alt=""
+          loading={eager ? "eager" : "lazy"}
+          decoding="async"
+          width="450"
+          height="280"
+          className="w-full h-full object-cover object-top"
+          onError={() => setFailed(true)}
+        />
+      )}
+      <span className="absolute inset-0 flex items-end bg-gradient-to-t from-black/50 via-transparent to-transparent p-4 opacity-0 transition-opacity hover:opacity-100">
+        <span className="font-mono2 text-xs text-white/90 bg-black/60 px-3 py-1 rounded-full border border-white/20">
+          ♫ {name || "Preview"}
+        </span>
+      </span>
+    </motion.button>
+  );
+};
 
 // The main hero component
 export const AnimatedMarqueeHero = ({
@@ -24,6 +64,7 @@ export const AnimatedMarqueeHero = ({
   description,
   ctaText,
   images = [],
+  names = [],
   className,
   onCtaClick,
   onImageClick,
@@ -34,16 +75,19 @@ export const AnimatedMarqueeHero = ({
     show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 100, damping: 20 } },
   };
 
-  // Duplicate images for a seamless continuous marquee loop
+  const reduceMotion = useReducedMotion();
+
+  // Two identical halves in a content-sized track (w-max) with per-item margins (no flex gap),
+  // so translating by exactly -50% moves one full copy and the loop has no seam
   const duplicatedImages = React.useMemo(() => {
     if (!images || images.length === 0) return [];
-    return [...images, ...images, ...images];
+    return [...images, ...images];
   }, [images]);
 
   return (
     <section
       className={cn(
-        "relative w-full min-h-[85vh] sm:min-h-[90vh] overflow-hidden flex flex-col items-center justify-start text-center px-4 pt-4 sm:pt-6 pb-20",
+        "relative w-full overflow-hidden flex flex-col items-center justify-start text-center px-4 pt-2 sm:pt-4 pb-8 sm:pb-10",
         className
       )}
     >
@@ -72,7 +116,7 @@ export const AnimatedMarqueeHero = ({
               },
             },
           }}
-          className="font-display text-4xl sm:text-6xl md:text-7xl text-[#17212b] leading-tight tracking-tight"
+          className="font-display text-4xl sm:text-5xl md:text-6xl text-[#17212b] leading-tight tracking-tight"
         >
           {typeof title === "string" ? (
             title.split(" ").map((word, i) => (
@@ -96,7 +140,7 @@ export const AnimatedMarqueeHero = ({
             animate="show"
             variants={FADE_IN_ANIMATION_VARIANTS}
             transition={{ delay: 0.4 }}
-            className="mt-4 max-w-2xl text-base sm:text-xl font-medium text-[#334155] leading-relaxed font-sans"
+            className="mt-3 max-w-2xl text-base sm:text-lg font-medium text-[#334155] leading-relaxed font-sans"
           >
             {description}
           </motion.p>
@@ -116,48 +160,22 @@ export const AnimatedMarqueeHero = ({
       </div>
 
       {/* Animated Image Marquee Carousel at bottom with performance lazy loading */}
-      <div className="w-full mt-10 md:mt-14 overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_10%,black_90%,transparent)]">
+      <div className="w-full mt-6 md:mt-8 overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_10%,black_90%,transparent)]">
         <motion.div
-          className="flex gap-6 sm:gap-8 py-6"
-          animate={{
-            x: ["0%", "-50%"],
-            transition: {
-              ease: "linear",
-              duration: 35,
-              repeat: Infinity,
-            },
-          }}
+          className="flex w-max py-6"
+          animate={reduceMotion ? undefined : { x: ["0%", "-50%"] }}
+          transition={{ ease: "linear", duration: Math.max(20, images.length * 4), repeat: Infinity }}
         >
           {duplicatedImages.map((src, index) => (
-            <motion.div
+            <Slide
               key={index}
-              whileHover={{ scale: 1.05, rotate: 0 }}
+              src={src}
+              name={names?.[index % images.length]}
+              tilt={(index % images.length) % 2 === 0 ? -3 : 4}
+              isClone={index >= images.length}
               onClick={() => onImageClick && onImageClick(index % images.length)}
-              className="relative aspect-[16/10] h-52 sm:h-72 md:h-84 w-72 sm:w-[420px] md:w-[500px] flex-shrink-0 cursor-pointer rounded-3xl overflow-hidden shadow-2xl border-4 border-white bg-slate-900 transition-all duration-300"
-              style={{
-                rotate: `${index % 2 === 0 ? -3 : 4}deg`,
-              }}
-            >
-              <img
-                src={src}
-                alt={`Viral playlist thumbnail preview ${index + 1}`}
-                loading={index < 3 ? "eager" : "lazy"}
-                fetchpriority={index === 0 ? "high" : "auto"}
-                decoding="async"
-                width="450"
-                height="280"
-                className="w-full h-full object-cover object-top"
-                onError={(e) => {
-                  e.target.onerror = null;
-                  e.target.src = 'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=600&auto=format&fit=crop';
-                }}
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 hover:opacity-100 transition-opacity flex items-end p-4">
-                <span className="font-mono2 text-xs text-white/90 bg-black/60 px-3 py-1 rounded-full border border-white/20">
-                  ♫ Preview Site
-                </span>
-              </div>
-            </motion.div>
+              eager={index < 3}
+            />
           ))}
         </motion.div>
       </div>

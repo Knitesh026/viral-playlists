@@ -1,4 +1,4 @@
-import { useEffect, useRef, useSyncExternalStore } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { BANNERS, loadBanner } from './adsterra';
 
 /** True when the viewport is at least `px` wide (always true when px is 0). */
@@ -28,24 +28,38 @@ export default function AdBanner({ size, className = '', minViewport = 0 }) {
 
 function AdSlot({ size, className }) {
   const ref = useRef(null);
+  const [filled, setFilled] = useState(false);
   const { width, height } = BANNERS[size];
 
   useEffect(() => {
     const el = ref.current;
     let cancelled = false;
+    // The slot stays collapsed (0 height, no label) until the ad network actually inserts its iframe,
+    // so blocked or unfilled ads leave no empty gap.
+    const observer = new MutationObserver(() => setFilled(!!el.querySelector('iframe')));
+    observer.observe(el, { childList: true, subtree: true });
     loadBanner(el, BANNERS[size], () => cancelled);
     return () => {
       cancelled = true;
+      observer.disconnect();
+      setFilled(false);
       el.replaceChildren(); // StrictMode / unmount: avoid duplicate ads
     };
   }, [size]);
 
   return (
-    <div className={`flex flex-col items-center ${className}`}>
-      <span className="mb-1 font-mono2 text-[10px] uppercase tracking-widest text-[#546575]/70">
+    <div
+      className={
+        filled
+          ? `flex flex-col items-center ${className}`
+          : // out of flow until the ad renders, so an unfilled slot leaves no grid cell or gap
+            'pointer-events-none absolute h-0 w-0 overflow-hidden opacity-0'
+      }
+    >
+      <span hidden={!filled} className="mb-1 font-mono2 text-[10px] uppercase tracking-widest text-[#546575]/70">
         Advertisement
       </span>
-      <div ref={ref} style={{ width, height, maxWidth: '100%' }} className="overflow-hidden" />
+      <div ref={ref} style={{ width, height: filled ? height : 0, maxWidth: '100%' }} className="overflow-hidden" />
     </div>
   );
 }

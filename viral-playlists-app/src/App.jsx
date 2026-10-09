@@ -10,6 +10,10 @@ import Footer from './components/Footer';
 import ResponsiveLeaderboard from './components/ads/ResponsiveLeaderboard';
 import NativeBanner from './components/ads/NativeBanner';
 import usePopunder from './components/ads/usePopunder';
+import { scrollToElement } from './lib/scroll';
+
+// Filler words ignored when a search phrase is split into terms
+const STOP_WORDS = new Set(['का', 'के', 'की', 'से', 'में', 'और', 'the', 'of', 'and', 'for', 'in']);
 
 const LOCAL_STORAGE_KEY = 'viral_playlists_user_submissions';
 const UPVOTES_KEY = 'viral_playlists_upvotes';
@@ -20,7 +24,9 @@ export default function App() {
       const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        return [...parsed, ...INITIAL_PLAYLISTS];
+        // Ignore malformed entries (old data, hand-edited storage)
+        const valid = Array.isArray(parsed) ? parsed.filter(p => p && typeof p.id === 'string' && p.title && p.url) : [];
+        return [...valid, ...INITIAL_PLAYLISTS];
       }
     } catch (err) {
       console.error('Failed to load local storage playlists', err);
@@ -43,8 +49,10 @@ export default function App() {
   );
   const [activeCategory, setActiveCategory] = useState('all');
 
-  // Only the id is stored; the playlist itself is derived so vote counts never go stale
-  const [heroId, setHeroId] = useState(() => (playlists.find(p => p.featured) || playlists[0])?.id);
+  const [sort, setSort] = useState('curated');
+  // Card briefly highlighted after a marquee click or a new submission
+  // {id, n}: n changes on every request so clicking the same slide twice re-scrolls and re-flashes
+  const [focus, setFocus] = useState(null);
 
   usePopunder();
 
@@ -81,21 +89,33 @@ export default function App() {
 
   // Filtered playlists
   const filteredPlaylists = useMemo(() => {
-    return votedPlaylists.filter(p => {
-      const matchesCat = activeCategory === 'all' || p.category === activeCategory;
-      const q = searchQuery.toLowerCase().trim();
-      if (!q) return matchesCat;
+    const terms = searchQuery.toLowerCase().split(/\s+/).filter(t => t.length >= 2 && !STOP_WORDS.has(t));
+    const scoreOf = (p) => {
+      const haystack = [p.title, p.desc, p.owner, p.url, ...(p.tags || []), ...(p.aliases || [])]
+        .filter(Boolean).join(' ').toLowerCase();
+      return terms.filter(t => haystack.includes(t)).length;
+    };
 
-      const matchesSearch =
-        p.title.toLowerCase().includes(q) ||
-        p.desc.toLowerCase().includes(q) ||
-        (p.owner && p.owner.toLowerCase().includes(q)) ||
-        p.url.toLowerCase().includes(q) ||
-        (p.tags && p.tags.some(t => t.toLowerCase().includes(q)));
+    let list = votedPlaylists.filter(p => {
+      const matchesCat = activeCategory === 'all' || p.category === activeCategory;
+      if (terms.length === 0) return matchesCat;
+      // A multi-word phrase matches when any of its words appears in the listing's text
+      const matchesSearch = scoreOf(p) > 0;
 
       return matchesCat && matchesSearch;
     });
-  }, [votedPlaylists, activeCategory, searchQuery]);
+
+    // With a search phrase, the listings matching the most words come first
+    if (terms.length > 0 && sort === 'curated') {
+      const scores = new Map(list.map(p => [p.id, scoreOf(p)]));
+      list = [...list].sort((a, b) => scores.get(b.id) - scores.get(a.id));
+    }
+
+    if (sort === 'upvotes') return [...list].sort((a, b) => (b.upvotes || 0) - (a.upvotes || 0));
+    if (sort === 'views') return [...list].sort((a, b) => (b.views || 0) - (a.views || 0));
+    if (sort === 'newest') return [...list].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    return list;
+  }, [votedPlaylists, activeCategory, searchQuery, sort]);
 
   const showToast = useCallback((msg) => {
     setToastMessage(msg);
@@ -103,10 +123,25 @@ export default function App() {
     toastTimer.current = setTimeout(() => setToastMessage(''), 3500);
   }, []);
 
-  const handleSelectHero = (playlist) => {
-    setHeroId(playlist.id);
-    showToast(`Featured "${playlist.title}" in Hero Carousel!`);
+  // Reveal a card: clear filters that would hide it, then scroll to it and flash it
+  const handleFocusCard = (playlist) => {
+    setSearchQuery('');
+    setActiveCategory('all');
+    setSort('curated');
+    setFocus({ id: playlist.id, n: Date.now() });
   };
+
+  const resetFilters = () => {
+    setSearchQuery('');
+    setActiveCategory('all');
+  };
+
+  useEffect(() => {
+    if (!focus) return;
+    scrollToElement(`card-${focus.id}`, 'center');
+    const timer = setTimeout(() => setFocus(null), 2600);
+    return () => clearTimeout(timer);
+  }, [focus]);
 
   const handleUpvote = (id) => {
     if (upvotedIds.has(id)) return;
@@ -126,9 +161,8 @@ export default function App() {
       console.error('LocalStorage write error:', err);
     }
 
-    // Set new playlist as Active in Hero Carousel automatically
-    setHeroId(newPlaylist.id);
-    showToast(`🎉 "${newPlaylist.title}" submitted & featured in Hero Carousel!`);
+    handleFocusCard(newPlaylist);
+    showToast(`🎉 "${newPlaylist.title}" added! It's saved in this browser only for now.`);
   };
 
 
@@ -156,9 +190,7 @@ export default function App() {
         {/* Main Hero Thumbnail Carousel */}
         <HeroSection
           playlists={votedPlaylists}
-          activeHeroId={heroId}
-          onSelectHero={handleSelectHero}
-          onUpvote={handleUpvote}
+          onSelectHero={handleFocusCard}
           onOpenSubmitModal={() => setIsSubmitModalOpen(true)}
         />
 
@@ -171,15 +203,18 @@ export default function App() {
           setActiveCategory={setActiveCategory}
           filteredCount={filteredPlaylists.length}
           totalCount={votedPlaylists.length}
+          sort={sort}
+          setSort={setSort}
         />
 
         {/* Playlist Card Grid */}
         <PlaylistGrid
           playlists={filteredPlaylists}
-          onSelectHero={handleSelectHero}
-          activeHeroId={heroId}
+          focusId={focus?.id}
           onUpvote={handleUpvote}
           upvotedIds={upvotedIds}
+          onReset={resetFilters}
+          onOpenSubmitModal={() => setIsSubmitModalOpen(true)}
         />
 
         {/* Ad: native banner (one per page) */}
@@ -202,6 +237,8 @@ export default function App() {
 
       {/* Footer */}
       <Footer
+        setActiveCategory={setActiveCategory}
+        setSearchQuery={setSearchQuery}
         onOpenSubmitModal={() => setIsSubmitModalOpen(true)}
       />
 

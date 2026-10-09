@@ -2,7 +2,7 @@ import React from 'react';
 import { INITIAL_CATEGORIES } from '../data/initialPlaylists';
 import { Radio } from 'lucide-react';
 
-export default function CategoryFilter({ activeCategory, setActiveCategory, filteredCount, totalCount }) {
+export default function CategoryFilter({ activeCategory, setActiveCategory, filteredCount, totalCount, sort, setSort }) {
   return (
     <div className="mx-auto max-w-6xl px-4 sm:px-6 2xl:max-w-7xl pb-6">
       
@@ -17,11 +17,24 @@ export default function CategoryFilter({ activeCategory, setActiveCategory, filt
             {filteredCount} / {totalCount}
           </span>
         </div>
+        <label className="flex items-center gap-2 text-xs font-semibold text-[#546575]">
+          Sort
+          <select
+            value={sort}
+            onChange={(e) => setSort(e.target.value)}
+            className="cursor-pointer rounded-full border border-[#dcd8cc] bg-white px-3 py-1.5 text-xs font-semibold text-[#17212b] outline-none focus:border-[#2489d3] focus-visible:ring-2 focus-visible:ring-[#2489d3] focus-visible:ring-offset-1"
+          >
+            <option value="curated">Curated</option>
+            <option value="upvotes">Most loved</option>
+            <option value="views">Most viewed</option>
+            <option value="newest">Newest first</option>
+          </select>
+        </label>
       </div>
 
       {/* Category Chips Scroll Bar */}
       <div className="-mx-4 overflow-x-auto px-4 pb-2 [scrollbar-width:none] sm:-mx-6 sm:px-6">
-        <div className="flex gap-2.5">
+        <div className="flex gap-2.5" role="group" aria-label="Filter by category">
           {INITIAL_CATEGORIES.map((cat) => {
             const isActive = activeCategory === cat.id;
 
